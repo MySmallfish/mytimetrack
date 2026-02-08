@@ -28,3 +28,7 @@ android/local.properties
 # Local logs / exports
 logs/
 build/
+
+# Website local http server artifacts
+website/.httpserver.log
+website/.httpserver.pid
