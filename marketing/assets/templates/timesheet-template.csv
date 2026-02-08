@@ -1,0 +1,5 @@
+Date,Start,End,Duration (hours),Project,Label,Notes
+2026-02-01,09:00,11:30,2.5,Client A,Planning,
+2026-02-01,12:30,15:00,2.5,Client B,Implementation,
+2026-02-01,16:00,17:00,1.0,Client A,Revisions,
+

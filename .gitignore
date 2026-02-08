@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Xcode / Swift
+DerivedData/
+DerivedData-*/
+*.xcuserstate
+xcuserdata/
+.clang-module-cache/
+
+# Xcode build products
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.dSYM.tar.gz
+
+# SwiftPM
+.build/
+
+# Android / Gradle
+android/**/build/
+android/.gradle/
+android/.gradle-home/
+android/local.properties
+.idea/
+*.iml
+
+# Local logs / exports
+logs/
+build/

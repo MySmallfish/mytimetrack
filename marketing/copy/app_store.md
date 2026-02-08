@@ -1,0 +1,26 @@
+# App Store Listing Draft
+
+## Subtitle (<= 30 chars)
+Time tracking for freelancers
+
+## Promotional Text (optional)
+Drag-select your day, export client-ready timesheets, and invoice faster.
+
+## Description
+{{APP_NAME}} is a time tracker built for freelancers who bill hourly or manage retainers.
+
+Most trackers feel like "work about work." {{APP_NAME}} is different: you log time directly on a day timeline. Drag-select your work blocks, tag the project, and export a clean CSV timesheet whenever you're ready to bill.
+
+Why freelancers use {{APP_NAME}}:
+- Day timeline you can finish (drag to log)
+- Projects + optional labels (keep billing clean)
+- Month summary and date range list
+- Export timesheet CSV via email
+- No subscription. No account required.
+- Private by default (Face ID lock)
+- {{GREENINVOICE_LINE}}
+
+Built for real multi-client work, not just one platform.
+
+## Keywords (draft)
+time tracker, timesheet, freelancer, billing, invoice, hourly, retainer, work log, project time, timesheets
