@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.fragment.app.FragmentActivity
 import il.co.simplevision.timetrack.data.Project
 import il.co.simplevision.timetrack.data.TimeStore
@@ -64,7 +65,7 @@ fun MonthSummaryScreen(
     var alert by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val monthTitle = remember(monthDate) {
-        monthDate.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.getDefault()))
+        monthDate.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.US))
     }
 
     val totalMinutes = remember(snap.lastUpdatedEpochMillis, selectedId, monthDate) {
@@ -134,7 +135,7 @@ fun MonthSummaryScreen(
 
         val csv = store.timesheetCsv(rangeStart, rangeEnd, project.id)
         val safeProject = project.name.replace("/", "-")
-        val rangeMonthTitle = rangeStart.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.getDefault()))
+        val rangeMonthTitle = rangeStart.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.US))
         val pdfName = "Proforma-$safeProject-$rangeMonthTitle.pdf"
         val csvName = "Timesheet-${rangeStart.format(FILE_FORMAT)}-${rangeEnd.format(FILE_FORMAT)}.csv"
 
@@ -186,6 +187,7 @@ fun MonthSummaryScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -403,7 +405,7 @@ private fun invoiceAmounts(project: Project, baseAmount: Double, vatRate: Double
 
 private fun invoiceHeader(project: Project, rangeStart: LocalDate): String {
     val trimmed = project.invoiceHeader.trim()
-    val month = rangeStart.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.getDefault()))
+    val month = rangeStart.format(DateTimeFormatter.ofPattern("LLLL yyyy").withLocale(Locale.US))
     if (trimmed.isEmpty()) return month
     return "$trimmed - $month"
 }
@@ -428,7 +430,7 @@ private fun proformaEmailBody(project: Project, rangeStart: LocalDate, rangeEnd:
 }
 
 private fun rangeTitle(start: LocalDate, end: LocalDate): String {
-    val fmt = DateTimeFormatter.ofPattern("MMM d, yyyy").withLocale(Locale.getDefault())
+    val fmt = DateTimeFormatter.ofPattern("MMM d, yyyy").withLocale(Locale.US)
     val startText = start.format(fmt)
     val endText = end.format(fmt)
     return if (startText == endText) startText else "$startText - $endText"
@@ -452,4 +454,4 @@ private fun effectiveInvoiceDate(): LocalDate {
 }
 
 private val FILE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-private val DAY_SHORT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d")
+private val DAY_SHORT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d").withLocale(Locale.US)

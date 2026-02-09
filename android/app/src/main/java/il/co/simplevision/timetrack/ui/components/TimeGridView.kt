@@ -57,7 +57,9 @@ fun TimeGridView(
 
     val rowHeightPx = with(density) { 24.dp.toPx() }
     val slotHeightPx = rowHeightPx / 2f
-    val gridOffsetY = rowHeightPx / 2f
+    // Small top offset so the first visible hour line isn't flush to the divider.
+    // Previously this was half a row, which left too much empty space under the header.
+    val gridOffsetY = with(density) { 4.dp.toPx() }
     val labelWidthPx = with(density) { 60.dp.toPx() }
     val columnSpacingPx = with(density) { 12.dp.toPx() }
     val baseX = labelWidthPx + columnSpacingPx
@@ -350,7 +352,7 @@ fun TimeGridView(
         }
     }
 
-    val nowFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(java.util.Locale.getDefault()) }
+    val nowFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(java.util.Locale.US) }
 
     val totalHeightDp = with(density) { (rowHeightPx * rowsPerDay + gridOffsetY).toDp() }
 

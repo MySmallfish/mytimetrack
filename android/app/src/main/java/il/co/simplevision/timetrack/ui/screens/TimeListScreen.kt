@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DatePicker
@@ -89,6 +90,7 @@ fun TimeListScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -259,6 +261,5 @@ private fun hoursText(minutes: Int): String {
 
 private fun currencyText(amount: Double): String = String.format(Locale.US, "$%.2f", amount)
 
-private val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
-private val ENTRY_DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d")
-
+private val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withLocale(Locale.US)
+private val ENTRY_DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d").withLocale(Locale.US)

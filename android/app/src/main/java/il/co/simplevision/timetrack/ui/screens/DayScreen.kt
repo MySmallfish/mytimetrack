@@ -5,7 +5,9 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
@@ -34,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.boundsInRoot
@@ -96,6 +99,9 @@ fun DayScreen(
     }
 
     Scaffold(
+        // The Activity uses decorFitsSystemWindows=true, so the system already insets the root view.
+        // Disable Scaffold insets to avoid double status-bar padding (visible as a large top gap).
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             LegendBar(
                 projects = snap.projects,
@@ -145,13 +151,22 @@ fun DayScreen(
             },
     ) { padding ->
         androidx.compose.foundation.layout.Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                    Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                    Row(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            ) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterStart),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         IconButton(onClick = ::previousDay) {
                             Icon(imageVector = Icons.Filled.ChevronLeft, contentDescription = "Previous day")
                         }
@@ -160,19 +175,20 @@ fun DayScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    TextButton(onClick = { showDatePicker = true }) {
-                        Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    TextButton(
+                        onClick = { showDatePicker = true },
+                        modifier = Modifier.align(Alignment.Center),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(dayTitle(day), style = MaterialTheme.typography.titleMedium)
                             Text(daySubtitle(day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Row(modifier = Modifier.weight(1f)) {
-                        Spacer(modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         IconButton(onClick = { onOpenList(summaryMonthDate) }) {
                             Icon(imageVector = Icons.Filled.ListIcon, contentDescription = "List")
                         }
@@ -211,6 +227,7 @@ fun DayScreen(
             WalkthroughOverlay(
                 isPresented = showWalkthrough,
                 targets = WalkthroughTargets(settings = settingsRect, grid = gridRect, summary = summaryRect),
+                bottomPadding = padding.calculateBottomPadding(),
                 onDismiss = {
                     prefs.setHasSeenWalkthrough(true)
                     prefs.setDebugRunWalkthrough(false)
@@ -284,11 +301,11 @@ private enum class SwipeMode { HORIZONTAL, VERTICAL }
 private fun dayTitle(day: LocalDate): String {
     val today = LocalDate.now()
     if (day == today) return "Today"
-    return day.format(DateTimeFormatter.ofPattern("EEE").withLocale(Locale.getDefault()))
+    return day.format(DateTimeFormatter.ofPattern("EEE").withLocale(Locale.US))
 }
 
 private fun daySubtitle(day: LocalDate): String {
-    return day.format(DateTimeFormatter.ofPattern("MMM d, yyyy").withLocale(Locale.getDefault()))
+    return day.format(DateTimeFormatter.ofPattern("MMM d, yyyy").withLocale(Locale.US))
 }
 
 private fun summaryMonthDate(): LocalDate {

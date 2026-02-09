@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.max
 
 data class WalkthroughTargets(
     val settings: Rect? = null,
@@ -43,6 +43,7 @@ data class WalkthroughTargets(
 fun WalkthroughOverlay(
     isPresented: Boolean,
     targets: WalkthroughTargets = WalkthroughTargets(),
+    bottomPadding: Dp = 0.dp,
     onDismiss: () -> Unit,
 ) {
     if (!isPresented) return
@@ -119,7 +120,7 @@ fun WalkthroughOverlay(
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp),
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp + bottomPadding),
         )
     }
 }
@@ -200,4 +201,3 @@ private fun WalkthroughCard(
 private fun Rect.inflate(delta: Float): Rect {
     return Rect(left - delta, top - delta, right + delta, bottom + delta)
 }
-

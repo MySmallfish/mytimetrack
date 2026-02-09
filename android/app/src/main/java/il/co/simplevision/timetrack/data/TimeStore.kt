@@ -393,7 +393,7 @@ class TimeStore(appContext: Context) {
         if (state.value.cloudSyncUri.isNullOrBlank()) return "Unavailable"
         val last = state.value.lastCloudSyncEpochMillis ?: return "Not yet"
         val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
+            .withLocale(Locale.US)
             .withZone(ZoneId.systemDefault())
         return formatter.format(Instant.ofEpochMilli(last))
     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -78,6 +79,7 @@ fun OnboardingFlow(onFinish: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -86,22 +88,7 @@ fun OnboardingFlow(onFinish: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "Skip",
-                    modifier = Modifier
-                        .padding(8.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                )
-                // Clickable without ripple for simplicity.
-                Box(
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .background(Color.Transparent)
-                        .padding(0.dp),
-                ) {
-                    // no-op (the "Skip" label is the hit target via parent Row)
-                }
+                OutlinedButton(onClick = onFinish) { Text("Skip") }
             }
 
             HorizontalPager(
@@ -130,18 +117,6 @@ fun OnboardingFlow(onFinish: () -> Unit) {
                 }) {
                     Text(if (pagerState.currentPage == steps.size - 1) "Get Started" else "Continue")
                 }
-            }
-        }
-
-        // Full-screen dismiss prevention is handled by BackHandler in the caller.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp, end = 12.dp),
-            contentAlignment = Alignment.TopEnd,
-        ) {
-            OutlinedButton(onClick = onFinish) {
-                Text("Skip")
             }
         }
     }
@@ -217,4 +192,3 @@ private fun Dots(count: Int, index: Int) {
         }
     }
 }
-

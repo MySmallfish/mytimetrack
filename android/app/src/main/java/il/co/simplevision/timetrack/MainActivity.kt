@@ -3,7 +3,9 @@ package il.co.simplevision.timetrack
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.activity.compose.setContent
+import androidx.core.os.LocaleListCompat
 import il.co.simplevision.timetrack.data.AppLock
 import il.co.simplevision.timetrack.data.TimeStore
 import il.co.simplevision.timetrack.ui.TimetrackRoot
@@ -14,6 +16,9 @@ class MainActivity : AppCompatActivity() {
     private val appLock by lazy { AppLock() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Force the app to always run in English + LTR (the iOS app is English-only).
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("en"))
+
         super.onCreate(savedInstanceState)
 
         // Dev ergonomics: keep the screen awake while the app is visible in the emulator/device.

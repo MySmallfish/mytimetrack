@@ -54,6 +54,14 @@
     - `xcrun devicectl device process launch --device 00008150-000D04523C84401C il.co.simplevision.timetrack`
   - Assistant note: always run the build/install/launch sequence after changes without asking.
 
+## TestFlight upload (Xcode CLI)
+- Keep `MARKETING_VERSION = 1.0`, bump `CURRENT_PROJECT_VERSION` for each upload.
+- Archive + upload:
+  - `xcodebuild -scheme Timetrack -configuration Release -destination 'generic/platform=iOS' -archivePath build/Timetrack.xcarchive -derivedDataPath ./DerivedData-Archive -allowProvisioningUpdates archive`
+  - `xcodebuild -exportArchive -archivePath build/Timetrack.xcarchive -exportOptionsPlist build/ExportOptionsUpload.plist -exportPath build/export-upload -allowProvisioningUpdates`
+- iCloud Sync note:
+  - If TestFlight shows iCloud as "Unavailable", the uploaded build was likely signed without iCloud entitlements; confirm `SystemCapabilities` includes `com.apple.iCloud` in `Timetrack.xcodeproj/project.pbxproj` and re-archive/re-upload.
+
 ## Android build (Android Studio)
 1. Open the `android/` folder in Android Studio.
 2. Let Gradle sync (first sync needs internet to download dependencies).
