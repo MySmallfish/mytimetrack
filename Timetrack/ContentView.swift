@@ -3275,6 +3275,8 @@ struct ScreenshotRootView: View {
     var body: some View {
         Group {
             switch viewName.lowercased() {
+            case "demo":
+                DemoClipView(referenceDate: referenceDate)
             case "summary":
                 MonthSummaryView(monthDate: referenceDate)
             case "list":
@@ -3290,8 +3292,316 @@ struct ScreenshotRootView: View {
         }
         .onAppear {
             guard !isSeeded else { return }
-            store.seedSampleData(referenceDate: referenceDate)
+            if viewName.lowercased() != "demo" {
+                store.seedSampleData(referenceDate: referenceDate)
+            }
             isSeeded = true
+        }
+    }
+}
+
+struct DemoClipView: View {
+    @EnvironmentObject private var store: TimeStore
+
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = true
+    @AppStorage("hasSeenWalkthrough") private var hasSeenWalkthrough = true
+    @AppStorage("debugRunWalkthrough") private var debugRunWalkthrough = false
+
+    let referenceDate: Date
+
+    private enum Step: Int {
+        case projects
+        case trackTime
+        case invoice
+    }
+
+    @State private var step: Step = .projects
+    @State private var headline: String = "Add 2 projects"
+    @State private var subtitle: String = "Name + rate in seconds."
+    @State private var isRunning = false
+
+    @State private var tapDown = false
+    @State private var dragProgress: CGFloat = 0
+    @State private var showInvoiceCheck = false
+
+    @State private var primaryProjectId: UUID?
+    @State private var secondaryProjectId: UUID?
+
+    private let accent = Color(red: 0.25, green: 0.62, blue: 0.60)
+
+    var body: some View {
+        ZStack {
+            Group {
+                switch step {
+                case .projects:
+                    SettingsView()
+                case .trackTime:
+                    DayView(initialDate: referenceDate)
+                case .invoice:
+                    MonthSummaryView(monthDate: referenceDate, selectedProjectId: primaryProjectId)
+                }
+            }
+            .animation(.easeInOut(duration: 0.55), value: step)
+
+            DemoBanner(headline: headline, subtitle: subtitle, accent: accent)
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .allowsHitTesting(false)
+
+            GeometryReader { proxy in
+                let size = proxy.size
+                let highlight = highlightRect(for: step, in: size)
+
+                if highlight != .zero {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(accent.opacity(0.9), lineWidth: 3)
+                        .frame(width: highlight.width, height: highlight.height)
+                        .position(x: highlight.midX, y: highlight.midY)
+                        .shadow(color: Color.black.opacity(0.20), radius: 16, x: 0, y: 10)
+                        .opacity(step == .trackTime ? 0.75 : 0.95)
+                        .allowsHitTesting(false)
+                }
+
+                if let finger = fingerPosition(for: step, in: size, highlight: highlight) {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 24, height: 24)
+                        .overlay(Circle().stroke(Color.black.opacity(0.10), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.20), radius: 10, x: 0, y: 6)
+                        .scaleEffect(tapDown ? 0.80 : 1.0)
+                        .opacity(step == .trackTime && dragProgress == 0 ? 0 : 1)
+                        .position(x: finger.x, y: finger.y)
+                        .animation(.easeInOut(duration: 0.12), value: tapDown)
+                        .allowsHitTesting(false)
+                }
+
+                if showInvoiceCheck {
+                    VStack(spacing: 10) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 44, weight: .semibold))
+                            .foregroundStyle(accent)
+                        Text("Invoice PDF ready")
+                            .font(.headline)
+                        Text("Send a proforma + timesheet export.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(accent.opacity(0.25), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.16), radius: 22, x: 0, y: 12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .transition(.scale.combined(with: .opacity))
+                    .allowsHitTesting(false)
+                }
+            }
+        }
+        .task {
+            guard !isRunning else { return }
+            isRunning = true
+            await runDemo()
+        }
+    }
+
+    private func runDemo() async {
+        await MainActor.run {
+            hasSeenOnboarding = true
+            hasSeenWalkthrough = true
+            debugRunWalkthrough = false
+
+            store.resetAllDataForDemo()
+
+            primaryProjectId = nil
+            secondaryProjectId = nil
+            tapDown = false
+            dragProgress = 0
+            showInvoiceCheck = false
+
+            step = .projects
+            headline = "Add 2 projects"
+            subtitle = "Name + rate in seconds."
+        }
+
+        // Give the Simulator capture script time to start recording.
+        await sleep(seconds: 2.0)
+        await tap()
+        await addProject(name: "Acme Mobile", rate: 120)
+
+        await sleep(seconds: 0.90)
+        await tap()
+        await addProject(name: "Nimbus", rate: 95)
+
+        await sleep(seconds: 3.20)
+
+        await MainActor.run {
+            step = .trackTime
+            headline = "Drag to mark time"
+            subtitle = "Timeline snaps to 30 min."
+            dragProgress = 0
+        }
+
+        await sleep(seconds: 0.70)
+        if let primaryProjectId {
+            let start = slotIndex(hour: 9, minute: 0)
+            let end = slotIndex(hour: 10, minute: 30) - 1
+            await animateEntry(projectId: primaryProjectId, label: "Build", day: referenceDate, startSlot: start, endSlot: end)
+        }
+
+        await sleep(seconds: 0.40)
+        if let secondaryProjectId {
+            let start = slotIndex(hour: 13, minute: 0)
+            let end = slotIndex(hour: 14, minute: 30) - 1
+            await animateEntry(projectId: secondaryProjectId, label: "Wireframes", day: referenceDate, startSlot: start, endSlot: end)
+        }
+
+        await sleep(seconds: 2.20)
+
+        await MainActor.run {
+            step = .invoice
+            headline = "Send invoice PDF"
+            subtitle = "Plus timesheet export."
+            tapDown = false
+            dragProgress = 0
+        }
+
+        await sleep(seconds: 0.70)
+        await tap()
+        await MainActor.run {
+            showInvoiceCheck = true
+        }
+    }
+
+    private func sleep(seconds: Double) async {
+        let nanos = UInt64(max(0, seconds) * 1_000_000_000)
+        try? await Task.sleep(nanoseconds: nanos)
+    }
+
+    private func tap() async {
+        await MainActor.run { tapDown = true }
+        await sleep(seconds: 0.10)
+        await MainActor.run { tapDown = false }
+    }
+
+    private func addProject(name: String, rate: Double) async {
+        await MainActor.run {
+            store.addProject()
+            guard let index = store.projects.indices.last else { return }
+            store.projects[index].name = name
+            store.projects[index].rate = rate
+            if primaryProjectId == nil {
+                primaryProjectId = store.projects[index].id
+            } else if secondaryProjectId == nil {
+                secondaryProjectId = store.projects[index].id
+            }
+        }
+    }
+
+    private func animateEntry(
+        projectId: UUID,
+        label: String,
+        day: Date,
+        startSlot: Int,
+        endSlot: Int
+    ) async {
+        let start = max(0, min(TimeStore.slotsPerDay - 1, startSlot))
+        let end = max(start, min(TimeStore.slotsPerDay - 1, endSlot))
+        let total = max(1, end - start)
+
+        for slot in start...end {
+            let progress = CGFloat(slot - start) / CGFloat(total)
+            await MainActor.run {
+                dragProgress = progress
+                store.setEntry(projectId, label: label, for: start...slot, on: day)
+            }
+            await sleep(seconds: 0.12)
+        }
+
+        await MainActor.run {
+            dragProgress = 0
+        }
+    }
+
+    private func slotIndex(hour: Int, minute: Int) -> Int {
+        let totalMinutes = hour * 60 + minute
+        let index = totalMinutes / TimeStore.slotMinutes
+        return max(0, min(TimeStore.slotsPerDay - 1, index))
+    }
+
+    private func highlightRect(for step: Step, in size: CGSize) -> CGRect {
+        switch step {
+        case .projects:
+            return CGRect(
+                x: size.width * 0.08,
+                y: size.height * 0.20,
+                width: size.width * 0.84,
+                height: 52
+            )
+        case .trackTime:
+            return CGRect(
+                x: size.width * 0.14,
+                y: size.height * 0.18,
+                width: size.width * 0.72,
+                height: size.height * 0.45
+            )
+        case .invoice:
+            return CGRect(
+                x: size.width * 0.08,
+                y: size.height * 0.74,
+                width: size.width * 0.84,
+                height: 54
+            )
+        }
+    }
+
+    private func fingerPosition(for step: Step, in size: CGSize, highlight: CGRect) -> CGPoint? {
+        switch step {
+        case .projects:
+            return CGPoint(x: highlight.minX + 46, y: highlight.midY)
+        case .trackTime:
+            let x = size.width * 0.72
+            let startY = size.height * 0.24
+            let endY = size.height * 0.44
+            let y = startY + (endY - startY) * dragProgress
+            return CGPoint(x: x, y: y)
+        case .invoice:
+            return CGPoint(x: highlight.minX + 44, y: highlight.midY)
+        }
+    }
+
+    private struct DemoBanner: View {
+        let headline: String
+        let subtitle: String
+        let accent: Color
+
+        var body: some View {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(headline)
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Circle()
+                    .fill(accent)
+                    .frame(width: 10, height: 10)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(accent.opacity(0.25), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: 10)
         }
     }
 }
@@ -3308,6 +3618,11 @@ struct SettingsView: View {
     @AppStorage("debugRunOnboarding") private var debugRunOnboarding = false
     @AppStorage("debugRunWalkthrough") private var debugRunWalkthrough = false
 #endif
+
+    private var isDemoCaptureMode: Bool {
+        ProcessInfo.processInfo.environment["SCREENSHOT_MODE"] == "1" &&
+            (ProcessInfo.processInfo.environment["SCREENSHOT_VIEW"] ?? "").lowercased() == "demo"
+    }
 
     var body: some View {
         NavigationStack {
@@ -3339,22 +3654,24 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("iCloud Sync") {
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        Text(store.isICloudAvailable ? "Available" : "Unavailable")
-                            .foregroundColor(store.isICloudAvailable ? .secondary : .red)
-                    }
-                    HStack {
-                        Text("Last Sync")
-                        Spacer()
-                        Text(store.lastCloudSyncLabel)
+                if !isDemoCaptureMode {
+                    Section("iCloud Sync") {
+                        HStack {
+                            Text("Status")
+                            Spacer()
+                            Text(store.isICloudAvailable ? "Available" : "Unavailable")
+                                .foregroundColor(store.isICloudAvailable ? .secondary : .red)
+                        }
+                        HStack {
+                            Text("Last Sync")
+                            Spacer()
+                            Text(store.lastCloudSyncLabel)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("Sync uses iCloud Drive to keep data in sync across devices.")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("Sync uses iCloud Drive to keep data in sync across devices.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
 
                 Section("Invoice PDF") {
@@ -3419,21 +3736,23 @@ struct SettingsView: View {
                 }
 
 #if DEBUG
-                Section("Debug") {
-                    Button("Run Onboarding + Tour") {
-                        debugRunOnboarding = true
-                        debugRunWalkthrough = true
-                        dismiss()
-                    }
+                if !isDemoCaptureMode {
+                    Section("Debug") {
+                        Button("Run Onboarding + Tour") {
+                            debugRunOnboarding = true
+                            debugRunWalkthrough = true
+                            dismiss()
+                        }
 
-                    Button("Run Walkthrough Only") {
-                        debugRunWalkthrough = true
-                        dismiss()
-                    }
+                        Button("Run Walkthrough Only") {
+                            debugRunWalkthrough = true
+                            dismiss()
+                        }
 
-                    Button("Reset Intro Flags") {
-                        hasSeenOnboarding = false
-                        hasSeenWalkthrough = false
+                        Button("Reset Intro Flags") {
+                            hasSeenOnboarding = false
+                            hasSeenWalkthrough = false
+                        }
                     }
                 }
 #endif

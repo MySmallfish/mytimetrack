@@ -543,6 +543,22 @@ final class TimeStore: ObservableObject {
         }
     }
 
+    /// Used by screenshot/demo capture flows to ensure deterministic state.
+    func resetAllDataForDemo() {
+        projects = []
+        logs = [:]
+        invoiceRecords = []
+        greenInvoiceApiKey = ""
+        greenInvoiceApiSecret = ""
+        greenInvoiceTestMode = false
+        invoiceLogoData = nil
+        invoiceSignatureData = nil
+        invoiceStartNumber = 1
+        invoiceNextNumber = nil
+        lastSelectedProjectId = nil
+        lastCloudSync = nil
+    }
+
     func addInvoiceRecord(clientId: String?, clientKey: String, date: Date, isSandbox: Bool) {
         let trimmedKey = clientKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedKey.isEmpty else { return }
