@@ -57,9 +57,8 @@ fun TimeGridView(
 
     val rowHeightPx = with(density) { 24.dp.toPx() }
     val slotHeightPx = rowHeightPx / 2f
-    // Small top offset so the first visible hour line isn't flush to the divider.
-    // Previously this was half a row, which left too much empty space under the header.
-    val gridOffsetY = with(density) { 4.dp.toPx() }
+    // Keep the first visible hour line tight to the header divider.
+    val gridOffsetY = 0f
     val labelWidthPx = with(density) { 60.dp.toPx() }
     val columnSpacingPx = with(density) { 12.dp.toPx() }
     val baseX = labelWidthPx + columnSpacingPx

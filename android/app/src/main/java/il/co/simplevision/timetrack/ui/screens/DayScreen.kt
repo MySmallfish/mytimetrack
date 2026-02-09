@@ -161,7 +161,7 @@ fun DayScreen(
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                 ) {
                     Row(
                         modifier = Modifier.align(Alignment.CenterStart),

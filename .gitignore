@@ -32,6 +32,13 @@ build/
 *.log.*
 nohup.out
 
+# Play Store service account (never commit)
+publish-play-store.json
+
+# Android signing (never commit)
+android/keystore.properties
+android/keystore/
+
 # Website local http server artifacts
 website/.httpserver.log
 website/.httpserver.pid
