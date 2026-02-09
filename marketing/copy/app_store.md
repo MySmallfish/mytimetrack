@@ -24,3 +24,17 @@ Built for real multi-client work, not just one platform.
 
 ## Keywords (draft)
 time tracker, timesheet, freelancer, billing, invoice, hourly, retainer, work log, project time, timesheets
+
+## App Preview Video (15s)
+Exported demo clip:
+- Video: `marketing/assets/exports/mytimetrack-demo-15s.mp4` (1206x2622, 15s)
+- Poster: `marketing/assets/exports/mytimetrack-demo-start.png`
+
+Website embed:
+- `website/assets/demo/mytimetrack-demo-15s.mp4`
+- `website/assets/demo/mytimetrack-demo-start.png`
+
+Upload steps (App Store Connect):
+1. Go to App Store Connect > My Apps > {{APP_NAME}} > App Store.
+2. Open App Previews and Screenshots for iPhone.
+3. Upload the 15s MP4 to the matching device size slot (1206x2622).
