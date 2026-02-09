@@ -5,7 +5,7 @@ window.MYTIMETRACK_CONFIG = {
 
   // App store links
   // Example iOS: "https://apps.apple.com/app/id1234567890"
-  iosUrl: "",
+  iosUrl: "https://apps.apple.com/us/app/mytimetrack/id6757753534",
   // Example Android: "https://play.google.com/store/apps/details?id=il.co.simplevision.timetrack"
   androidUrl: "",
 
@@ -15,6 +15,5 @@ window.MYTIMETRACK_CONFIG = {
   noAccountLine: "No account required.",
 
   // Contact
-  supportEmail: "support@mytimetrack.app",
+  supportEmail: "track@simplevision.co.il",
 };
-

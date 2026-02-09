@@ -15,3 +15,6 @@ Edit:
 
 If `iosUrl` or `androidUrl` is empty, the corresponding download button will show as "Coming soon".
 
+## Legal Pages
+- Privacy Policy: `/privacy/` (`website/privacy/index.html`)
+- Terms: `/terms/` (`website/terms/index.html`)

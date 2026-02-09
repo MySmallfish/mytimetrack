@@ -8,6 +8,7 @@
 - App opens directly into the day view and requires Face ID/device authentication.
 - Brand accent color (onboarding Continue button + iOS icon accent): `Color(red: 0.25, green: 0.62, blue: 0.60)` (`OnboardingTheme.accent` in `Timetrack/ContentView.swift`, `Palette.accent` in `.tmp_generate_assets.swift`).
 - Marketing kit lives under `marketing/`. Website lives under `website/` (static HTML/CSS/JS).
+- Website config (store links + support email): `website/assets/js/config.js`. Deployed via Cloudflare Pages at `https://mytimetrack.pages.dev/` (see `/privacy/` + `/terms/`).
 
 ## Key files
 - `Timetrack/ContentView.swift`: UI (lock screen, day header, time grid, picker, settings).

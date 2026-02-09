@@ -5,13 +5,13 @@ Replace placeholders in the copy like `{{APP_NAME}}` and `{{APP_STORE_URL}}`.
 ## Core
 - `{{APP_NAME}}`: MyTimetrack
 - `{{TAGLINE}}`: Drag-select your day. Export timesheets. Invoice faster.
-- `{{APP_STORE_URL}}`: (TODO) (or use platform-specific URLs below)
-- `{{APP_STORE_IOS_URL}}`: (TODO)
+- `{{APP_STORE_URL}}`: https://apps.apple.com/us/app/mytimetrack/id6757753534 (or use platform-specific URLs below)
+- `{{APP_STORE_IOS_URL}}`: https://apps.apple.com/us/app/mytimetrack/id6757753534
 - `{{APP_STORE_ANDROID_URL}}`: (TODO)
-- `{{LANDING_URL}}`: (TODO)
+- `{{LANDING_URL}}`: https://mytimetrack.pages.dev/
 - `{{FOUNDER_NAME}}`: (TODO)
 - `{{FROM_NAME}}`: (e.g., "{{FOUNDER_NAME}} (MyTimetrack)")
-- `{{REPLY_TO_EMAIL}}`: (TODO)
+- `{{REPLY_TO_EMAIL}}`: track@simplevision.co.il
 
 ## Pricing
 - `{{PRICE}}`: $9.99 (lifetime, no subscription)

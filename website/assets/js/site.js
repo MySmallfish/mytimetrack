@@ -21,9 +21,9 @@
       el.textContent = cfg.priceUsd ? "$" + cfg.priceUsd : "$9.99";
     });
     $all("[data-support-email]").forEach(function (el) {
-      el.textContent = cfg.supportEmail || "support@mytimetrack.app";
+      el.textContent = cfg.supportEmail || "track@simplevision.co.il";
       if (el.tagName.toLowerCase() === "a") {
-        el.href = "mailto:" + (cfg.supportEmail || "support@mytimetrack.app");
+        el.href = "mailto:" + (cfg.supportEmail || "track@simplevision.co.il");
       }
     });
 
@@ -104,4 +104,3 @@
     setupYear();
   });
 })();
-
