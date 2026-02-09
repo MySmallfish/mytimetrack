@@ -110,8 +110,26 @@
             </div>
 
             <div class="reveal is-visible" style="transition-delay: 80ms">
-              <div class="phone" aria-label="MyTimetrack screenshot">
-                <img class="phone-screen" src="../assets/screenshots/day.png" alt="Day timeline screenshot" />
+              <div class="phone phone-demo" aria-label="MyTimetrack 15-second demo video">
+                <div class="phone-badge" aria-hidden="true">
+                  <span class="phone-badge-dot"></span>
+                  15s demo
+                </div>
+                <video
+                  class="phone-screen"
+                  playsinline
+                  muted
+                  autoplay
+                  loop
+                  preload="metadata"
+                  disablepictureinpicture
+                  controlslist="nodownload noplaybackrate noremoteplayback"
+                  poster="../assets/demo/mytimetrack-demo-start.png"
+                  aria-label="15-second demo: add two projects, log time, and produce an invoice"
+                >
+                  <source src="../assets/demo/mytimetrack-demo-15s.mp4" type="video/mp4" />
+                  <img class="phone-screen" src="../assets/screenshots/day.png" alt="Day timeline screenshot" />
+                </video>
               </div>
             </div>
           </div>
