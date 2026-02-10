@@ -375,6 +375,7 @@ struct DayView: View {
     @AppStorage("debugRunWalkthrough") private var debugRunWalkthrough = false
     @State private var hasConsumedEnvWalkthrough = false
 
+    @Binding private var demoSelectionRange: ClosedRange<Int>?
     @State private var day: Date
     @State private var selection: Selection?
     @State private var showSettings = false
@@ -387,8 +388,12 @@ struct DayView: View {
     private let calendar = Calendar.current
     private let daySwipeThreshold: CGFloat = 80
 
-    init(initialDate: Date = Date()) {
+    init(
+        initialDate: Date = Date(),
+        demoSelectionRange: Binding<ClosedRange<Int>?> = .constant(nil)
+    ) {
         _day = State(initialValue: initialDate)
+        _demoSelectionRange = demoSelectionRange
     }
 
 
@@ -396,7 +401,7 @@ struct DayView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            TimeGridView(day: day) { range in
+            TimeGridView(day: day, demoSelectionRange: demoSelectionRange) { range in
                 guard !store.projects.isEmpty else {
                     showNoProjectsAlert = true
                     return
@@ -655,6 +660,19 @@ private struct WalkthroughAnchorPreferenceKey: PreferenceKey {
     }
 }
 
+private enum DemoHighlightAnchorID: Hashable {
+    case addProject
+    case sendProforma
+}
+
+private struct DemoHighlightAnchorPreferenceKey: PreferenceKey {
+    static var defaultValue: [DemoHighlightAnchorID: Anchor<CGRect>] = [:]
+
+    static func reduce(value: inout [DemoHighlightAnchorID: Anchor<CGRect>], nextValue: () -> [DemoHighlightAnchorID: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
 private struct WalkthroughOverlay: View {
     @Binding var isPresented: Bool
     let anchors: [WalkthroughAnchorID: Anchor<CGRect>]
@@ -833,6 +851,7 @@ private struct WalkthroughCutoutShape: Shape {
 
 struct TimeGridView: View {
     let day: Date
+    let demoSelectionRange: ClosedRange<Int>?
     let onRangeSelected: (ClosedRange<Int>) -> Void
 
     @EnvironmentObject private var store: TimeStore
@@ -860,6 +879,16 @@ struct TimeGridView: View {
     private let columnSpacing: CGFloat = 12
     private var slotHeight: CGFloat { rowHeight / 2 }
     private var gridOffsetY: CGFloat { rowHeight / 2 }
+
+    init(
+        day: Date,
+        demoSelectionRange: ClosedRange<Int>? = nil,
+        onRangeSelected: @escaping (ClosedRange<Int>) -> Void
+    ) {
+        self.day = day
+        self.demoSelectionRange = demoSelectionRange
+        self.onRangeSelected = onRangeSelected
+    }
 
     var body: some View {
         let slots = store.slots(for: day)
@@ -920,6 +949,16 @@ struct TimeGridView: View {
                                     if let selectionRange = selectedRange {
                                         SelectionOverlay(
                                             range: selectionRange,
+                                            timeWidth: timeWidth,
+                                            slotHeight: slotHeight,
+                                            baseOffsetY: gridOffsetY
+                                        )
+                                        .allowsHitTesting(false)
+                                    }
+
+                                    if selectedRange == nil, let demoSelectionRange {
+                                        DemoSelectionOverlay(
+                                            range: demoSelectionRange,
                                             timeWidth: timeWidth,
                                             slotHeight: slotHeight,
                                             baseOffsetY: gridOffsetY
@@ -1469,6 +1508,32 @@ struct SelectionOverlay: View {
     }
 }
 
+struct DemoSelectionOverlay: View {
+    let range: ClosedRange<Int>
+    let timeWidth: CGFloat
+    let slotHeight: CGFloat
+    let baseOffsetY: CGFloat
+
+    private let accent = Color(red: 0.25, green: 0.62, blue: 0.60)
+
+    var body: some View {
+        let start = min(range.lowerBound, range.upperBound)
+        let end = max(range.lowerBound, range.upperBound)
+        let height = CGFloat(end - start + 1) * slotHeight
+        let offsetY = CGFloat(start) * slotHeight + baseOffsetY
+
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(accent.opacity(0.12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(accent.opacity(0.92), lineWidth: 3)
+            )
+            .frame(width: timeWidth, height: height)
+            .offset(x: 0, y: offsetY)
+            .shadow(color: Color.black.opacity(0.14), radius: 18, x: 0, y: 12)
+    }
+}
+
 struct EntryEditorView: View {
     let projects: [Project]
     let existingSlots: [UUID?]
@@ -1931,6 +1996,9 @@ struct MonthSummaryView: View {
                         }
                     }
                     .disabled(selectedProjectId == nil || isGeneratingProforma)
+                    .anchorPreference(key: DemoHighlightAnchorPreferenceKey.self, value: .bounds) { anchor in
+                        [.sendProforma: anchor]
+                    }
 
                     if selectedProjectId == nil {
                         Text("Select a project to send.")
@@ -3323,6 +3391,7 @@ struct DemoClipView: View {
     @State private var tapDown = false
     @State private var dragProgress: CGFloat = 0
     @State private var showInvoiceCheck = false
+    @State private var demoSelectionRange: ClosedRange<Int>? = nil
 
     @State private var primaryProjectId: UUID?
     @State private var secondaryProjectId: UUID?
@@ -3336,7 +3405,7 @@ struct DemoClipView: View {
                 case .projects:
                     SettingsView()
                 case .trackTime:
-                    DayView(initialDate: referenceDate)
+                    DayView(initialDate: referenceDate, demoSelectionRange: $demoSelectionRange)
                 case .invoice:
                     MonthSummaryView(monthDate: referenceDate, selectedProjectId: primaryProjectId)
                 }
@@ -3348,57 +3417,70 @@ struct DemoClipView: View {
                 .padding(.top, 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .allowsHitTesting(false)
-
+        }
+        .overlayPreferenceValue(DemoHighlightAnchorPreferenceKey.self) { anchors in
             GeometryReader { proxy in
                 let size = proxy.size
-                let highlight = highlightRect(for: step, in: size)
-
-                if highlight != .zero {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(accent.opacity(0.9), lineWidth: 3)
-                        .frame(width: highlight.width, height: highlight.height)
-                        .position(x: highlight.midX, y: highlight.midY)
-                        .shadow(color: Color.black.opacity(0.20), radius: 16, x: 0, y: 10)
-                        .opacity(step == .trackTime ? 0.75 : 0.95)
-                        .allowsHitTesting(false)
-                }
-
-                if let finger = fingerPosition(for: step, in: size, highlight: highlight) {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 24, height: 24)
-                        .overlay(Circle().stroke(Color.black.opacity(0.10), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.20), radius: 10, x: 0, y: 6)
-                        .scaleEffect(tapDown ? 0.80 : 1.0)
-                        .opacity(step == .trackTime && dragProgress == 0 ? 0 : 1)
-                        .position(x: finger.x, y: finger.y)
-                        .animation(.easeInOut(duration: 0.12), value: tapDown)
-                        .allowsHitTesting(false)
-                }
-
-                if showInvoiceCheck {
-                    VStack(spacing: 10) {
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 44, weight: .semibold))
-                            .foregroundStyle(accent)
-                        Text("Invoice PDF ready")
-                            .font(.headline)
-                        Text("Send a proforma + timesheet export.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                let targetRect: CGRect = {
+                    switch step {
+                    case .projects:
+                        return anchors[.addProject].map { proxy[$0] } ?? .zero
+                    case .invoice:
+                        return anchors[.sendProforma].map { proxy[$0] } ?? .zero
+                    case .trackTime:
+                        return .zero
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(accent.opacity(0.25), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.16), radius: 22, x: 0, y: 12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .transition(.scale.combined(with: .opacity))
-                    .allowsHitTesting(false)
+                }()
+                let highlight = highlightRect(for: targetRect)
+
+                ZStack {
+                    if highlight != .zero {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(accent.opacity(0.9), lineWidth: 3)
+                            .frame(width: highlight.width, height: highlight.height)
+                            .position(x: highlight.midX, y: highlight.midY)
+                            .shadow(color: Color.black.opacity(0.20), radius: 16, x: 0, y: 10)
+                            .opacity(step == .trackTime ? 0.75 : 0.95)
+                            .allowsHitTesting(false)
+                    }
+
+                    if let finger = fingerPosition(for: step, in: size, highlight: highlight) {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 24, height: 24)
+                            .overlay(Circle().stroke(Color.black.opacity(0.10), lineWidth: 1))
+                            .shadow(color: Color.black.opacity(0.20), radius: 10, x: 0, y: 6)
+                            .scaleEffect(tapDown ? 0.80 : 1.0)
+                            .opacity(step == .trackTime && dragProgress == 0 ? 0 : 1)
+                            .position(x: finger.x, y: finger.y)
+                            .animation(.easeInOut(duration: 0.12), value: tapDown)
+                            .allowsHitTesting(false)
+                    }
+
+                    if showInvoiceCheck {
+                        VStack(spacing: 10) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 44, weight: .semibold))
+                                .foregroundStyle(accent)
+                            Text("Invoice PDF ready")
+                                .font(.headline)
+                            Text("Send a proforma + timesheet export.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 14)
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .stroke(accent.opacity(0.25), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.16), radius: 22, x: 0, y: 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        .transition(.scale.combined(with: .opacity))
+                        .allowsHitTesting(false)
+                    }
                 }
             }
         }
@@ -3422,6 +3504,7 @@ struct DemoClipView: View {
             tapDown = false
             dragProgress = 0
             showInvoiceCheck = false
+            demoSelectionRange = nil
 
             step = .projects
             headline = "Add 2 projects"
@@ -3444,6 +3527,7 @@ struct DemoClipView: View {
             headline = "Drag to mark time"
             subtitle = "Timeline snaps to 30 min."
             dragProgress = 0
+            demoSelectionRange = nil
         }
 
         await sleep(seconds: 0.70)
@@ -3454,6 +3538,10 @@ struct DemoClipView: View {
         }
 
         await sleep(seconds: 0.40)
+        await MainActor.run {
+            demoSelectionRange = nil
+        }
+        await sleep(seconds: 0.12)
         if let secondaryProjectId {
             let start = slotIndex(hour: 13, minute: 0)
             let end = slotIndex(hour: 14, minute: 30) - 1
@@ -3468,6 +3556,7 @@ struct DemoClipView: View {
             subtitle = "Plus timesheet export."
             tapDown = false
             dragProgress = 0
+            demoSelectionRange = nil
         }
 
         await sleep(seconds: 0.70)
@@ -3517,6 +3606,7 @@ struct DemoClipView: View {
             let progress = CGFloat(slot - start) / CGFloat(total)
             await MainActor.run {
                 dragProgress = progress
+                demoSelectionRange = start...slot
                 store.setEntry(projectId, label: label, for: start...slot, on: day)
             }
             await sleep(seconds: 0.12)
@@ -3533,35 +3623,29 @@ struct DemoClipView: View {
         return max(0, min(TimeStore.slotsPerDay - 1, index))
     }
 
-    private func highlightRect(for step: Step, in size: CGSize) -> CGRect {
-        switch step {
-        case .projects:
-            return CGRect(
-                x: size.width * 0.08,
-                y: size.height * 0.20,
-                width: size.width * 0.84,
-                height: 52
-            )
-        case .trackTime:
-            return CGRect(
-                x: size.width * 0.14,
-                y: size.height * 0.18,
-                width: size.width * 0.72,
-                height: size.height * 0.45
-            )
-        case .invoice:
-            return CGRect(
-                x: size.width * 0.08,
-                y: size.height * 0.74,
-                width: size.width * 0.84,
-                height: 54
-            )
+    private func highlightRect(for targetRect: CGRect) -> CGRect {
+        guard targetRect != .zero else { return .zero }
+
+        var rect = targetRect.insetBy(dx: -10, dy: -10)
+        let minSize: CGFloat = 56
+
+        if rect.width < minSize {
+            let delta = (minSize - rect.width) / 2
+            rect = rect.insetBy(dx: -delta, dy: 0)
         }
+
+        if rect.height < minSize {
+            let delta = (minSize - rect.height) / 2
+            rect = rect.insetBy(dx: 0, dy: -delta)
+        }
+
+        return rect
     }
 
     private func fingerPosition(for step: Step, in size: CGSize, highlight: CGRect) -> CGPoint? {
         switch step {
         case .projects:
+            guard highlight != .zero else { return nil }
             return CGPoint(x: highlight.minX + 46, y: highlight.midY)
         case .trackTime:
             let x = size.width * 0.72
@@ -3570,6 +3654,7 @@ struct DemoClipView: View {
             let y = startY + (endY - startY) * dragProgress
             return CGPoint(x: x, y: y)
         case .invoice:
+            guard highlight != .zero else { return nil }
             return CGPoint(x: highlight.minX + 44, y: highlight.midY)
         }
     }
@@ -3651,6 +3736,9 @@ struct SettingsView: View {
                         store.addProject()
                     } label: {
                         Label("Add Project", systemImage: "plus")
+                    }
+                    .anchorPreference(key: DemoHighlightAnchorPreferenceKey.self, value: .bounds) { anchor in
+                        [.addProject: anchor]
                     }
                 }
 
